@@ -167,7 +167,7 @@
             top: 0;
             z-index: 10;
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             background: rgba(249, 250, 251, .94);
             -webkit-backdrop-filter: blur(12px);
             backdrop-filter: blur(12px);
@@ -373,6 +373,18 @@
         .step.final h3 { color: var(--accent-500); }
         .step.final p { color: var(--g300); }
 
+        /* 콘텐츠 바구니 */
+        .basket-card { display: flex; flex-direction: column; gap: 6px; padding: 20px; border: 1px solid var(--g200); border-radius: 12px; background: #fff; box-shadow: var(--shadow-sm); }
+        .basket-type { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px; background: var(--accent-100); color: var(--accent-600); font-size: .8125rem; font-weight: 600; }
+        .basket-card h3 { font-size: 1.0625rem; font-weight: 700; color: var(--g800); line-height: 1.4; }
+        .basket-author { font-size: .875rem; font-weight: 600; color: var(--brand-600); }
+        .basket-desc { font-size: .9375rem; color: var(--g600); }
+        .basket-link { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; margin-top: auto; padding-top: 6px; color: var(--brand-600); font-weight: 600; text-decoration: none; }
+        .basket-empty { padding: 40px 20px; border: 2px dashed var(--g200); border-radius: var(--radius); text-align: center; color: var(--g500); }
+        .basket-empty[hidden] { display: none; }
+        .basket-empty i { display: block; margin-bottom: 8px; font-size: 2.5rem; color: var(--g300); }
+        .basket-empty strong { color: var(--g700); }
+
         /* ---------- 모집 / 폼 ---------- */
         .recruit { max-width: 42rem; margin: 0 auto; }
         .recruit-head { margin-bottom: 28px; text-align: center; }
@@ -520,7 +532,7 @@
         @media (min-width: 640px) {
             .tab { min-height: 76px; font-size: 1rem; padding: 14px 8px 11px; }
             .tab i { font-size: 1.5rem; }
-            .grid-org, .grid-steps { grid-template-columns: repeat(2, 1fr); }
+            .grid-org, .grid-steps, .grid-basket { grid-template-columns: repeat(2, 1fr); }
             .choices { grid-template-columns: repeat(2, 1fr); }
             .br-wide { display: inline; }
             .checklist-card { padding: 24px; }
@@ -550,6 +562,7 @@
             .grid-org { grid-template-columns: repeat(3, 1fr); }
             .role-card.vp-ext { grid-column: 1; grid-row: 2; }   /* 3열에서 부회장(대외협력)을 회장 바로 아래에 */
             .grid-steps { grid-template-columns: repeat(4, 1fr); }
+            .grid-basket { grid-template-columns: repeat(3, 1fr); }
         }
 
         /* 마우스 환경에서만 hover 효과 (터치 기기에서 hover 가 남는 문제 방지) */
@@ -601,6 +614,9 @@
                 </button>
                 <button class="tab" role="tab" id="tab-plan" aria-controls="panel-plan" aria-selected="false" tabindex="-1">
                     <i class="ph ph-calendar-check" aria-hidden="true"></i>활동 계획
+                </button>
+                <button class="tab" role="tab" id="tab-contents" aria-controls="panel-contents" aria-selected="false" tabindex="-1">
+                    <i class="ph ph-basket" aria-hidden="true"></i>콘텐츠 바구니
                 </button>
                 <button class="tab" role="tab" id="tab-recruit" aria-controls="panel-recruit" aria-selected="false" tabindex="-1">
                     <i class="ph ph-handshake" aria-hidden="true"></i>신규 회원 모집
@@ -820,7 +836,25 @@
                 </div>
             </section>
 
-            <!-- Tab 4: 신규 회원 모집 -->
+            <!-- Tab 4: 콘텐츠 바구니 -->
+            <section class="panel" id="panel-contents" role="tabpanel" aria-labelledby="tab-contents" tabindex="-1" hidden>
+                <div class="block">
+                    <div class="sec-head">
+                        <div class="sec-icon accent"><i class="ph ph-basket" aria-hidden="true"></i></div>
+                        <div>
+                            <h2>콘텐츠 바구니</h2>
+                            <p class="sec-sub">함께 만들고 다듬은 콘텐츠를 모아 둡니다</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-basket" id="basketList"></div>
+                    <div class="basket-empty" id="basketEmpty" hidden>
+                        <i class="ph ph-basket" aria-hidden="true"></i>
+                        <p><strong>아직 담긴 콘텐츠가 없습니다.</strong><br>회원들이 만든 첫 콘텐츠가 곧 이곳에 담깁니다.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 5: 신규 회원 모집 -->
             <section class="panel" id="panel-recruit" role="tabpanel" aria-labelledby="tab-recruit" tabindex="-1" hidden>
                 <div class="recruit">
                     <div class="recruit-head">
@@ -975,6 +1009,24 @@
         // 주소 끝의 #org, #plan, #recruit 로 해당 탭을 바로 열 수 있음
         const initial = panels.findIndex(p => p.id === 'panel-' + location.hash.slice(1));
         if (initial > 0) selectTab(initial, { updateHash: false });
+
+        /* ---------- 콘텐츠 바구니 ----------
+           콘텐츠를 추가하려면 아래 CONTENTS 목록에 한 줄씩 넣으면 됩니다.
+           type: '영상' | '글' | '강의자료' | '기타'   (link 가 없으면 '보기' 버튼이 숨겨집니다)
+           예: { type: '영상', title: '진로 탐색 이야기', author: '김신규', desc: '한 줄 소개', link: 'https://...' }, */
+        const CONTENTS = [
+        ];
+        const TYPE_ICON = { '영상': 'ph-play-circle', '글': 'ph-file-text', '강의자료': 'ph-presentation-chart' };
+        const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        document.getElementById('basketList').innerHTML = CONTENTS.map(c => `
+            <article class="basket-card">
+                <span class="basket-type"><i class="ph ${TYPE_ICON[c.type] || 'ph-package'}" aria-hidden="true"></i>${esc(c.type || '기타')}</span>
+                <h3>${esc(c.title)}</h3>
+                ${c.author ? `<p class="basket-author">${esc(c.author)}</p>` : ''}
+                ${c.desc ? `<p class="basket-desc">${esc(c.desc)}</p>` : ''}
+                ${/^https?:\/\//.test(c.link || '') ? `<a class="basket-link" href="${esc(c.link)}" target="_blank" rel="noopener">보기 <i class="ph ph-arrow-square-out" aria-hidden="true"></i></a>` : ''}
+            </article>`).join('');
+        document.getElementById('basketEmpty').hidden = CONTENTS.length > 0;
 
         /* ---------- 폼 ---------- */
         const form = document.getElementById('recruitForm');
