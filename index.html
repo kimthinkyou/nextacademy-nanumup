@@ -391,10 +391,7 @@
         .basket-author { font-size: .875rem; font-weight: 600; color: var(--brand-600); }
         .basket-desc { font-size: .9375rem; color: var(--g600); }
         .basket-link { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; margin-top: auto; padding-top: 6px; color: var(--brand-600); font-weight: 600; text-decoration: none; }
-        .basket-empty { padding: 40px 20px; border: 2px dashed var(--g200); border-radius: var(--radius); text-align: center; color: var(--g500); }
-        .basket-empty[hidden] { display: none; }
-        .basket-empty i { display: block; margin-bottom: 8px; font-size: 2.5rem; color: var(--g300); }
-        .basket-empty strong { color: var(--g700); }
+        .grid-basket:not(:empty) { margin-top: 24px; }
 
         /* ---------- 모집 / 폼 ---------- */
         .recruit { max-width: 42rem; margin: 0 auto; }
@@ -847,20 +844,6 @@
                         </li>
                     </ol>
                 </div>
-
-                <div class="block">
-                    <div class="sec-head">
-                        <div class="sec-icon"><i class="ph ph-users-three" aria-hidden="true"></i></div>
-                        <div>
-                            <h2>회원별 콘텐츠</h2>
-                            <p class="sec-sub">이름을 누르면 각자의 콘텐츠 페이지로 이어집니다</p>
-                        </div>
-                    </div>
-                    <div class="member-tabs" id="memberTabs" role="tablist" aria-label="회원 선택"></div>
-                    <div class="member-panel" id="memberPanel" aria-live="polite">
-                        <p>위에서 이름을 누르면 해당 회원의 콘텐츠를 볼 수 있습니다.</p>
-                    </div>
-                </div>
             </section>
 
             <!-- Tab 4: 콘텐츠 바구니 -->
@@ -870,14 +853,14 @@
                         <div class="sec-icon accent"><i class="ph ph-basket" aria-hidden="true"></i></div>
                         <div>
                             <h2>콘텐츠 바구니</h2>
-                            <p class="sec-sub">함께 만들고 다듬은 콘텐츠를 모아 둡니다</p>
+                            <p class="sec-sub">회원 이름을 누르면 각자의 콘텐츠 페이지로 이어집니다</p>
                         </div>
                     </div>
-                    <div class="grid grid-basket" id="basketList"></div>
-                    <div class="basket-empty" id="basketEmpty" hidden>
-                        <i class="ph ph-basket" aria-hidden="true"></i>
-                        <p><strong>아직 담긴 콘텐츠가 없습니다.</strong><br>회원들이 만든 첫 콘텐츠가 곧 이곳에 담깁니다.</p>
+                    <div class="member-tabs" id="memberTabs" role="tablist" aria-label="회원 선택"></div>
+                    <div class="member-panel" id="memberPanel" aria-live="polite">
+                        <p>위에서 이름을 누르면 해당 회원의 콘텐츠를 볼 수 있습니다.</p>
                     </div>
+                    <div class="grid grid-basket" id="basketList"></div>
                 </div>
             </section>
 
@@ -1053,9 +1036,8 @@
                 ${c.desc ? `<p class="basket-desc">${esc(c.desc)}</p>` : ''}
                 ${/^https?:\/\//.test(c.link || '') ? `<a class="basket-link" href="${esc(c.link)}" target="_blank" rel="noopener">보기 <i class="ph ph-arrow-square-out" aria-hidden="true"></i></a>` : ''}
             </article>`).join('');
-        document.getElementById('basketEmpty').hidden = CONTENTS.length > 0;
 
-        /* ---------- 회원별 콘텐츠 (활동 계획 탭) ----------
+        /* ---------- 회원별 콘텐츠 (콘텐츠 바구니 탭) ----------
            각자의 노션 페이지가 준비되면 notion 에 '웹에 공유'한 공개 주소를 넣으면 됩니다.
            예: { name: '김신규', notion: 'https://xxxx.notion.site/페이지-이름-abc123' }, */
         const MEMBERS = [
