@@ -95,6 +95,9 @@
             object-fit: cover;
             object-position: 40% 25%;   /* 휴대폰에서도 인물 얼굴이 보이도록 */
         }
+        /* 커서를 따라 픽셀로 흩어지는 효과용 캔버스 (스크립트가 준비되면 사진 대신 그림) */
+        .hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+        .hero.is-pixel img { visibility: hidden; }
         .hero::after {
             content: "";
             position: absolute;
@@ -1162,6 +1165,94 @@
         modal.querySelector('[data-close]').addEventListener('click', () => modal.close());
         // 바깥(어두운 배경) 클릭 시 닫기 — ESC 키는 <dialog> 가 기본 지원
         modal.addEventListener('click', e => { if (e.target === modal) modal.close(); });
+
+        /* ---------- 첫 화면: 커서를 따라 사진이 픽셀로 흩어졌다 다시 붙는 효과 ----------
+           마우스(휴대폰은 손가락 터치)가 닿은 주변의 사진 조각이 밀려났다가 스프링처럼 제자리로 돌아옵니다.
+           '동작 줄이기' 설정을 켠 기기에서는 효과 없이 사진만 보입니다. */
+        (() => {
+            if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            const hero = document.querySelector('.hero');
+            const img = hero.querySelector('img');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const off = document.createElement('canvas');          // 화면 크기 그대로 그려 둔 사진 (조각을 잘라 쓰는 원본)
+            const offCtx = off.getContext('2d');
+            if (!ctx || !offCtx) return;
+            canvas.className = 'hero-canvas';
+            canvas.setAttribute('aria-hidden', 'true');
+            img.after(canvas);
+
+            let W = 0, H = 0, dpr = 1, cell = 16, cols = 0, rows = 0;
+            let dx, dy, vx, vy;
+            let px = -9999, py = -9999, active = false, ready = false, raf = 0, release = 0;
+
+            function layout() {
+                const r = hero.getBoundingClientRect();
+                dpr = Math.min(window.devicePixelRatio || 1, 2);
+                W = r.width; H = r.height;
+                canvas.width = off.width = Math.round(W * dpr);
+                canvas.height = off.height = Math.round(H * dpr);
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                cell = W < 640 ? 12 : 16;                       // 픽셀 조각 크기
+                cols = Math.ceil(W / cell); rows = Math.ceil(H / cell);
+                const n = cols * rows;
+                dx = new Float32Array(n); dy = new Float32Array(n);
+                vx = new Float32Array(n); vy = new Float32Array(n);
+                const scale = Math.max(W / img.naturalWidth, H / img.naturalHeight);   // object-fit: cover
+                const ox = (W - img.naturalWidth * scale) * 0.40;                       // object-position: 40% 25%
+                const oy = (H - img.naturalHeight * scale) * 0.25;
+                offCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                offCtx.drawImage(img, ox, oy, img.naturalWidth * scale, img.naturalHeight * scale);
+                drawStill();
+            }
+            function drawStill() {
+                ctx.clearRect(0, 0, W, H);
+                ctx.drawImage(off, 0, 0, W, H);
+            }
+            function frame() {
+                const R = W < 640 ? 100 : 170, PUSH = W < 640 ? 32 : 48;   // 영향 반경, 밀려나는 거리
+                let moving = false;
+                ctx.clearRect(0, 0, W, H);
+                for (let j = 0, k = 0; j < rows; j++) {
+                    for (let i = 0; i < cols; i++, k++) {
+                        const x = i * cell, y = j * cell;
+                        let tx = 0, ty = 0;
+                        if (active) {
+                            const cx = x + cell / 2 - px, cy = y + cell / 2 - py, d = Math.hypot(cx, cy);
+                            if (d < R && d > 0.01) { const f = (1 - d / R) ** 2 * PUSH; tx = cx / d * f; ty = cy / d * f; }
+                        }
+                        vx[k] = (vx[k] + (tx - dx[k]) * 0.14) * 0.78;   // 스프링으로 제자리 복귀
+                        vy[k] = (vy[k] + (ty - dy[k]) * 0.14) * 0.78;
+                        dx[k] += vx[k]; dy[k] += vy[k];
+                        const m = Math.abs(dx[k]) + Math.abs(dy[k]);
+                        if (m + Math.abs(vx[k]) + Math.abs(vy[k]) > 0.1) moving = true;
+                        const gap = Math.min(m / PUSH, 1) * cell * 0.35;   // 멀리 밀릴수록 조각이 작아져 틈이 보임
+                        ctx.drawImage(off, x * dpr, y * dpr, cell * dpr, cell * dpr,
+                            x + dx[k] + gap / 2, y + dy[k] + gap / 2, cell - gap, cell - gap);
+                    }
+                }
+                if (moving || active) raf = requestAnimationFrame(frame);
+                else { raf = 0; drawStill(); }
+            }
+            const start = () => { if (ready && !raf) raf = requestAnimationFrame(frame); };
+            const point = e => { const r = hero.getBoundingClientRect(); px = e.clientX - r.left; py = e.clientY - r.top; };
+            const touch = e => {                     // 터치: 닿은 곳을 잠깐 흩뜨렸다가 놓아 줌
+                point(e); active = true; start();
+                clearTimeout(release); release = setTimeout(() => { active = false; }, 400);
+            };
+            hero.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') { point(e); active = true; start(); } else touch(e); });
+            hero.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') touch(e); });
+            hero.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') active = false; });
+
+            const init = () => {
+                if (!img.naturalWidth) { canvas.remove(); return; }
+                ready = true; layout(); hero.classList.add('is-pixel');
+                new ResizeObserver(() => layout()).observe(hero);
+                img.addEventListener('load', () => layout());   // 화면 크기에 따라 사진 해상도가 바뀌면 다시 계산
+            };
+            if (img.complete) init();
+            else img.addEventListener('load', init, { once: true });
+        })();
     })();
     </script>
 </body>
