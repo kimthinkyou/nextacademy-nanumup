@@ -379,14 +379,32 @@
         /* 회원별 콘텐츠 */
         .member-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px 8px; padding-top: 4px; margin-bottom: 20px; }   /* 5명씩 2줄 */
         .member-chip { --c-bg: var(--g100); --c-fg: var(--g700); appearance: none; min-height: 48px; padding: 8px 2px; border: 2px solid transparent; border-radius: 12px; background: var(--c-bg); color: var(--c-fg); font-size: .9375rem; font-weight: 700; white-space: nowrap; cursor: pointer; box-shadow: 0 6px 14px -4px rgba(15, 23, 42, .18), 0 2px 4px rgba(15, 23, 42, .06); transition: background-color .2s, border-color .2s, color .2s, box-shadow .2s, transform .2s; -webkit-tap-highlight-color: transparent; }   /* 떠 있는 탭 */
-        .member-chip[aria-selected="true"] { background: var(--c-fg); color: #fff; transform: translateY(-3px); box-shadow: 0 12px 20px -6px var(--c-fg), 0 4px 8px rgba(15, 23, 42, .12); }
+        .member-chip.is-lifted { visibility: hidden; }   /* 카드로 떠오른 동안 자리를 비워 둠 */
         .member-chip:active { transform: translateY(0); box-shadow: 0 2px 6px rgba(15, 23, 42, .12); }
         .member-chip:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; }
-        .member-panel { display: grid; justify-items: center; gap: 8px; padding: 28px 20px; border: 1px solid var(--g200); border-radius: var(--radius); background: var(--g50); text-align: center; }
-        .member-avatar { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--c-bg, var(--brand-100)); color: var(--c-fg, var(--brand-700)); font-size: 1.5rem; font-weight: 700; }
-        .member-panel h3 { font-size: 1.125rem; font-weight: 700; color: var(--g800); }
-        .member-panel p { color: var(--g600); }
         .member-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 6px; padding: 10px 18px; border-radius: 10px; background: var(--g900); color: #fff; font-weight: 600; text-decoration: none; }
+
+        /* 회원 프로필 카드: 이름 탭에서 떠올라 뒤집히고, 다시 누르면 제자리로 */
+        .pcard-dialog { position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 16px; border: 0; background: transparent; overflow: hidden; }
+        .pcard-dialog[open] { display: grid; place-items: center; }
+        .pcard-dialog::backdrop { background: transparent; }
+        .pcard-scrim { position: absolute; inset: 0; background: rgba(15, 23, 42, .55); }
+        .pcard { position: relative; width: min(320px, 100%); height: min(440px, calc(100dvh - 32px)); perspective: 1200px; transform-origin: 0 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .pcard-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transform: rotateY(180deg); }
+        .pcard-face { position: absolute; inset: 0; border-radius: 20px; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 24px 48px -12px rgba(15, 23, 42, .45); }
+        .pcard-front { display: grid; place-items: center; background: var(--c-bg); color: var(--c-fg); font-size: 2rem; font-weight: 800; }
+        .pcard-back { display: flex; flex-direction: column; background: #fff; transform: rotateY(180deg); }
+        .pcard-head { display: flex; align-items: center; gap: 14px; padding: 28px 56px 22px 20px; background: var(--c-bg); color: var(--c-fg); }
+        .pcard-avatar { flex: none; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: #fff; font-size: 1.5rem; font-weight: 800; }
+        .pcard-head h3 { font-size: 1.25rem; font-weight: 800; }
+        .pcard-head p { font-size: .875rem; font-weight: 600; opacity: .8; }
+        .pcard-body { flex: 1; display: grid; align-content: start; gap: 16px; padding: 20px; overflow-y: auto; }
+        .pcard-body dt { font-size: .8125rem; font-weight: 700; color: var(--g500); }
+        .pcard-body dd { margin: 4px 0 0; color: var(--g800); }
+        .pcard-body dd.is-empty { color: var(--g400); }
+        .pcard-hint { padding: 12px 20px 16px; border-top: 1px solid var(--g100); font-size: .8125rem; color: var(--g500); text-align: center; }
+        .pcard-close { position: absolute; top: 12px; right: 12px; display: grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .75); color: var(--c-fg); font-size: 1.25rem; cursor: pointer; }
+        .pcard-close:focus-visible { outline: 2px solid var(--c-fg); outline-offset: 2px; }
 
         /* 콘텐츠 바구니 */
         .basket-card { display: flex; flex-direction: column; gap: 6px; padding: 20px; border: 1px solid var(--g200); border-radius: 12px; background: #fff; box-shadow: var(--shadow-sm); }
@@ -587,7 +605,7 @@
             .choice:hover { background: var(--brand-50); }
             .btn-primary:hover:not(:disabled) { background: var(--brand-700); transform: translateY(-2px); box-shadow: 0 14px 24px -8px rgba(37, 99, 235, .6); }
             .btn-dark:hover { background: var(--g800); }
-            .member-chip:hover:not([aria-selected="true"]) { border-color: var(--c-fg); transform: translateY(-3px); box-shadow: 0 12px 20px -6px rgba(15, 23, 42, .22), 0 4px 8px rgba(15, 23, 42, .08); }
+            .member-chip:hover { border-color: var(--c-fg); transform: translateY(-3px); box-shadow: 0 12px 20px -6px rgba(15, 23, 42, .22), 0 4px 8px rgba(15, 23, 42, .08); }
             .member-link:hover { background: var(--g800); }
         }
 
@@ -857,13 +875,16 @@
                         <div class="sec-icon accent"><i class="ph ph-basket" aria-hidden="true"></i></div>
                         <div>
                             <h2>콘텐츠 바구니</h2>
-                            <p class="sec-sub">회원 이름을 누르면 각자의 콘텐츠 페이지로 이어집니다</p>
+                            <p class="sec-sub">회원 이름을 누르면 프로필 카드가 열립니다</p>
                         </div>
                     </div>
-                    <div class="member-tabs" id="memberTabs" role="tablist" aria-label="회원 선택"></div>
-                    <div class="member-panel" id="memberPanel" aria-live="polite">
-                        <p>위에서 이름을 누르면 해당 회원의 콘텐츠를 볼 수 있습니다.</p>
-                    </div>
+                    <div class="member-tabs" id="memberTabs" role="group" aria-label="회원 프로필"></div>
+                    <dialog class="pcard-dialog" id="pcardDialog" aria-labelledby="pcardName">
+                        <div class="pcard-scrim"></div>
+                        <div class="pcard" id="pcard">
+                            <div class="pcard-inner" id="pcardInner"></div>
+                        </div>
+                    </dialog>
                     <div class="grid grid-basket" id="basketList"></div>
                 </div>
             </section>
@@ -1042,19 +1063,20 @@
             </article>`).join('');
 
         /* ---------- 회원별 콘텐츠 (콘텐츠 바구니 탭) ----------
-           각자의 노션 페이지가 준비되면 notion 에 '웹에 공유'한 공개 주소를 넣으면 됩니다.
-           예: { name: '김신규', notion: 'https://xxxx.notion.site/페이지-이름-abc123' }, */
+           프로필 카드 뒷면에 보일 내용: intro(한 줄 소개), field(관심·전문 분야), notion(노션 공개 주소).
+           비워 두면 '아직 입력되지 않았습니다'로 표시됩니다.
+           예: { name: '김신규', intro: '함께 배우는 기획자', field: 'AI 콘텐츠 제작', notion: 'https://xxxx.notion.site/페이지-이름-abc123' }, */
         const MEMBERS = [
-            { name: '김신규', notion: '' },
-            { name: '박병홍', notion: '' },
-            { name: '심상우', notion: '' },
-            { name: '권일석', notion: '' },
-            { name: '서지영', notion: '' },
-            { name: '윤서우', notion: '' },
-            { name: '임미혜', notion: '' },
-            { name: '임서이', notion: '' },
-            { name: '최경희', notion: '' },
-            { name: '정영옥', notion: '' },
+            { name: '김신규', intro: '', field: '', notion: '' },
+            { name: '박병홍', intro: '', field: '', notion: '' },
+            { name: '심상우', intro: '', field: '', notion: '' },
+            { name: '권일석', intro: '', field: '', notion: '' },
+            { name: '서지영', intro: '', field: '', notion: '' },
+            { name: '윤서우', intro: '', field: '', notion: '' },
+            { name: '임미혜', intro: '', field: '', notion: '' },
+            { name: '임서이', intro: '', field: '', notion: '' },
+            { name: '최경희', intro: '', field: '', notion: '' },
+            { name: '정영옥', intro: '', field: '', notion: '' },
         ];
         // 회원별 파스텔 색 (배경 / 글자). 회원이 늘면 처음 색부터 다시 씁니다.
         const MEMBER_COLORS = [
@@ -1071,26 +1093,84 @@
         ];
         const colorVars = i => { const [bg, fg] = MEMBER_COLORS[i % MEMBER_COLORS.length]; return `--c-bg:${bg};--c-fg:${fg}`; };
         const memberTabs = document.getElementById('memberTabs');
-        const memberPanel = document.getElementById('memberPanel');
         memberTabs.innerHTML = MEMBERS.map((m, i) =>
-            `<button type="button" class="member-chip" role="tab" aria-selected="false" aria-controls="memberPanel" data-i="${i}" style="${colorVars(i)}">${esc(m.name)}</button>`).join('');
+            `<button type="button" class="member-chip" aria-haspopup="dialog" data-i="${i}" style="${colorVars(i)}">${esc(m.name)}</button>`).join('');
 
-        function showMember(i) {
-            const m = MEMBERS[i];
-            memberTabs.querySelectorAll('.member-chip').forEach((b, j) => b.setAttribute('aria-selected', String(j === i)));
-            const linked = /^https:\/\/([\w-]+\.)*notion\.(so|site)\//.test(m.notion || '');
-            memberPanel.innerHTML = `
-                <div class="member-avatar" aria-hidden="true" style="${colorVars(i)}">${esc(m.name.slice(0, 1))}</div>
-                <h3>${esc(m.name)}님의 콘텐츠</h3>
-                ${linked
-                    ? `<p>${esc(m.name)}님이 만든 콘텐츠를 노션 페이지에서 볼 수 있습니다.</p>
-                       <a class="member-link" href="${esc(m.notion)}" target="_blank" rel="noopener">노션 페이지 열기 <i class="ph ph-arrow-square-out" aria-hidden="true"></i></a>`
-                    : `<p>노션 페이지 연결을 준비하고 있습니다.</p>`}`;
+        const pDialog = document.getElementById('pcardDialog');
+        const pScrim = pDialog.querySelector('.pcard-scrim');
+        const pCard = document.getElementById('pcard');
+        const pInner = document.getElementById('pcardInner');
+        let pChip = null, pBusy = false;
+        const EASE = 'cubic-bezier(.2, .8, .2, 1)';
+        const noMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const field = (label, v) => `<div><dt>${label}</dt><dd class="${v ? '' : 'is-empty'}">${v ? esc(v) : '아직 입력되지 않았습니다'}</dd></div>`;
+
+        // 카드를 이름 탭 자리에 겹쳐 놓는 변형값
+        function chipTransform() {
+            const c = pChip.getBoundingClientRect(), d = pCard.getBoundingClientRect();
+            return `translate(${c.left - d.left}px, ${c.top - d.top}px) scale(${c.width / d.width}, ${c.height / d.height})`;
         }
+
+        function openCard(chip) {
+            if (pBusy || pDialog.open) return;
+            const i = Number(chip.dataset.i), m = MEMBERS[i];
+            const linked = /^https:\/\/([\w-]+\.)*notion\.(so|site)\//.test(m.notion || '');
+            pChip = chip;
+            pCard.setAttribute('style', colorVars(i));
+            pInner.innerHTML = `
+                <div class="pcard-face pcard-front" aria-hidden="true">${esc(m.name)}</div>
+                <div class="pcard-face pcard-back">
+                    <div class="pcard-head">
+                        <div class="pcard-avatar" aria-hidden="true">${esc(m.name.slice(0, 1))}</div>
+                        <div><h3 id="pcardName">${esc(m.name)}</h3><p>나눔업 회원 프로필</p></div>
+                    </div>
+                    <button type="button" class="pcard-close" aria-label="프로필 닫기"><i class="ph ph-x" aria-hidden="true"></i></button>
+                    <dl class="pcard-body">
+                        ${field('한 줄 소개', m.intro)}
+                        ${field('관심·전문 분야', m.field)}
+                        <div><dt>나의 콘텐츠</dt>${linked
+                            ? `<dd><a class="member-link" href="${esc(m.notion)}" target="_blank" rel="noopener">노션 페이지 열기 <i class="ph ph-arrow-square-out" aria-hidden="true"></i></a></dd>`
+                            : `<dd class="is-empty">노션 페이지 연결을 준비하고 있습니다</dd>`}</div>
+                    </dl>
+                    <p class="pcard-hint">카드를 다시 누르면 제자리로 돌아갑니다</p>
+                </div>`;
+            pDialog.showModal();
+            document.documentElement.style.overflow = 'hidden';
+            chip.classList.add('is-lifted');
+            pDialog.querySelector('.pcard-close').focus({ preventScroll: true });
+            if (noMotion()) return;
+            pBusy = true;
+            pScrim.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: 'ease-out' });
+            pCard.animate([{ transform: chipTransform() }, { transform: 'none' }], { duration: 450, easing: EASE });
+            pInner.animate([{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(180deg)' }],
+                { duration: 550, delay: 220, easing: EASE, fill: 'backwards' }).finished.finally(() => { pBusy = false; });
+        }
+
+        function closeCard() {
+            if (pBusy || !pDialog.open) return;
+            const done = () => {
+                pDialog.close();
+                document.documentElement.style.overflow = '';
+                pChip.classList.remove('is-lifted');
+                pChip.focus({ preventScroll: true });
+                pBusy = false;
+            };
+            if (noMotion()) return done();
+            pBusy = true;
+            const to = chipTransform();
+            pInner.animate([{ transform: 'rotateY(180deg)' }, { transform: 'rotateY(0deg)' }], { duration: 450, easing: EASE, fill: 'forwards' });
+            pScrim.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 350, delay: 300, easing: 'ease-in', fill: 'forwards' });
+            pCard.animate([{ transform: 'none' }, { transform: to }], { duration: 400, delay: 280, easing: EASE, fill: 'forwards' })
+                .finished.then(() => { done(); pCard.getAnimations().concat(pInner.getAnimations(), pScrim.getAnimations()).forEach(a => a.cancel()); });
+        }
+
         memberTabs.addEventListener('click', e => {
             const b = e.target.closest('.member-chip');
-            if (b) showMember(Number(b.dataset.i));
+            if (b) openCard(b);
         });
+        // 카드(또는 바깥)를 다시 누르면 닫힘. 노션 링크는 그대로 열림
+        pDialog.addEventListener('click', e => { if (!e.target.closest('a')) closeCard(); });
+        pDialog.addEventListener('cancel', e => { e.preventDefault(); closeCard(); });   // Esc
 
         /* ---------- 폼 ---------- */
         const form = document.getElementById('recruitForm');
