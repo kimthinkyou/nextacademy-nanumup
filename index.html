@@ -373,6 +373,17 @@
         .step.final h3 { color: var(--accent-500); }
         .step.final p { color: var(--g300); }
 
+        /* 회원별 콘텐츠 */
+        .member-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .member-chip { appearance: none; min-height: 44px; padding: 8px 16px; border: 1px solid var(--g200); border-radius: 999px; background: #fff; color: var(--g700); font-weight: 600; cursor: pointer; transition: background-color .2s, border-color .2s, color .2s; -webkit-tap-highlight-color: transparent; }
+        .member-chip[aria-selected="true"] { border-color: var(--brand-600); background: var(--brand-600); color: #fff; }
+        .member-chip:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; }
+        .member-panel { display: grid; justify-items: center; gap: 8px; padding: 28px 20px; border: 1px solid var(--g200); border-radius: var(--radius); background: var(--g50); text-align: center; }
+        .member-avatar { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--brand-100); color: var(--brand-700); font-size: 1.5rem; font-weight: 700; }
+        .member-panel h3 { font-size: 1.125rem; font-weight: 700; color: var(--g800); }
+        .member-panel p { color: var(--g600); }
+        .member-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 6px; padding: 10px 18px; border-radius: 10px; background: var(--g900); color: #fff; font-weight: 600; text-decoration: none; }
+
         /* 콘텐츠 바구니 */
         .basket-card { display: flex; flex-direction: column; gap: 6px; padding: 20px; border: 1px solid var(--g200); border-radius: 12px; background: #fff; box-shadow: var(--shadow-sm); }
         .basket-type { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px; background: var(--accent-100); color: var(--accent-600); font-size: .8125rem; font-weight: 600; }
@@ -575,6 +586,8 @@
             .choice:hover { background: var(--brand-50); }
             .btn-primary:hover:not(:disabled) { background: var(--brand-700); transform: translateY(-2px); box-shadow: 0 14px 24px -8px rgba(37, 99, 235, .6); }
             .btn-dark:hover { background: var(--g800); }
+            .member-chip:hover:not([aria-selected="true"]) { border-color: var(--brand-500); color: var(--brand-600); }
+            .member-link:hover { background: var(--g800); }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -834,6 +847,20 @@
                         </li>
                     </ol>
                 </div>
+
+                <div class="block">
+                    <div class="sec-head">
+                        <div class="sec-icon"><i class="ph ph-users-three" aria-hidden="true"></i></div>
+                        <div>
+                            <h2>회원별 콘텐츠</h2>
+                            <p class="sec-sub">이름을 누르면 각자의 콘텐츠 페이지로 이어집니다</p>
+                        </div>
+                    </div>
+                    <div class="member-tabs" id="memberTabs" role="tablist" aria-label="회원 선택"></div>
+                    <div class="member-panel" id="memberPanel" aria-live="polite">
+                        <p>위에서 이름을 누르면 해당 회원의 콘텐츠를 볼 수 있습니다.</p>
+                    </div>
+                </div>
             </section>
 
             <!-- Tab 4: 콘텐츠 바구니 -->
@@ -1027,6 +1054,42 @@
                 ${/^https?:\/\//.test(c.link || '') ? `<a class="basket-link" href="${esc(c.link)}" target="_blank" rel="noopener">보기 <i class="ph ph-arrow-square-out" aria-hidden="true"></i></a>` : ''}
             </article>`).join('');
         document.getElementById('basketEmpty').hidden = CONTENTS.length > 0;
+
+        /* ---------- 회원별 콘텐츠 (활동 계획 탭) ----------
+           각자의 노션 페이지가 준비되면 notion 에 '웹에 공유'한 공개 주소를 넣으면 됩니다.
+           예: { name: '김신규', notion: 'https://xxxx.notion.site/페이지-이름-abc123' }, */
+        const MEMBERS = [
+            { name: '김신규', notion: '' },
+            { name: '박병홍', notion: '' },
+            { name: '심상우', notion: '' },
+            { name: '권일석', notion: '' },
+            { name: '서지영', notion: '' },
+            { name: '윤서우', notion: '' },
+            { name: '임미혜', notion: '' },
+            { name: '임서이', notion: '' },
+            { name: '최경희', notion: '' },
+        ];
+        const memberTabs = document.getElementById('memberTabs');
+        const memberPanel = document.getElementById('memberPanel');
+        memberTabs.innerHTML = MEMBERS.map((m, i) =>
+            `<button type="button" class="member-chip" role="tab" aria-selected="false" aria-controls="memberPanel" data-i="${i}">${esc(m.name)}</button>`).join('');
+
+        function showMember(i) {
+            const m = MEMBERS[i];
+            memberTabs.querySelectorAll('.member-chip').forEach((b, j) => b.setAttribute('aria-selected', String(j === i)));
+            const linked = /^https:\/\/([\w-]+\.)*notion\.(so|site)\//.test(m.notion || '');
+            memberPanel.innerHTML = `
+                <div class="member-avatar" aria-hidden="true">${esc(m.name.slice(0, 1))}</div>
+                <h3>${esc(m.name)}님의 콘텐츠</h3>
+                ${linked
+                    ? `<p>${esc(m.name)}님이 만든 콘텐츠를 노션 페이지에서 볼 수 있습니다.</p>
+                       <a class="member-link" href="${esc(m.notion)}" target="_blank" rel="noopener">노션 페이지 열기 <i class="ph ph-arrow-square-out" aria-hidden="true"></i></a>`
+                    : `<p>노션 페이지 연결을 준비하고 있습니다.</p>`}`;
+        }
+        memberTabs.addEventListener('click', e => {
+            const b = e.target.closest('.member-chip');
+            if (b) showMember(Number(b.dataset.i));
+        });
 
         /* ---------- 폼 ---------- */
         const form = document.getElementById('recruitForm');
