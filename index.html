@@ -1167,9 +1167,10 @@
         modal.addEventListener('click', e => { if (e.target === modal) modal.close(); });
 
         /* ---------- 첫 화면: 커서를 따라 사진이 픽셀로 흩어졌다 다시 붙는 효과 ----------
-           마우스(휴대폰은 손가락 터치)가 닿은 주변의 사진 조각이 밀려났다가 스프링처럼 제자리로 돌아옵니다.
-           '동작 줄이기' 설정을 켠 기기에서는 효과 없이 사진만 보입니다. */
+           마우스가 닿은 주변의 사진 조각이 밀려났다가 스프링처럼 제자리로 돌아옵니다.
+           마우스를 쓰는 컴퓨터에서만 동작하고, 휴대폰·태블릿(터치)과 '동작 줄이기' 설정 기기에서는 사진만 보입니다. */
         (() => {
+            if (!matchMedia('(hover: hover) and (pointer: fine)').matches) return;   // 터치 기기 제외
             if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
             const hero = document.querySelector('.hero');
             const img = hero.querySelector('img');
@@ -1184,7 +1185,7 @@
 
             let W = 0, H = 0, dpr = 1, cell = 16, cols = 0, rows = 0;
             let dx, dy, vx, vy;
-            let px = -9999, py = -9999, active = false, ready = false, raf = 0, release = 0;
+            let px = -9999, py = -9999, active = false, ready = false, raf = 0;
 
             function layout() {
                 const r = hero.getBoundingClientRect();
@@ -1236,12 +1237,7 @@
             }
             const start = () => { if (ready && !raf) raf = requestAnimationFrame(frame); };
             const point = e => { const r = hero.getBoundingClientRect(); px = e.clientX - r.left; py = e.clientY - r.top; };
-            const touch = e => {                     // 터치: 닿은 곳을 잠깐 흩뜨렸다가 놓아 줌
-                point(e); active = true; start();
-                clearTimeout(release); release = setTimeout(() => { active = false; }, 400);
-            };
-            hero.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') { point(e); active = true; start(); } else touch(e); });
-            hero.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') touch(e); });
+            hero.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') { point(e); active = true; start(); } });
             hero.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') active = false; });
 
             const init = () => {
