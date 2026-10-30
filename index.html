@@ -374,12 +374,12 @@
         .step.final p { color: var(--g300); }
 
         /* 회원별 콘텐츠 */
-        .member-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-        .member-chip { appearance: none; min-height: 44px; padding: 8px 16px; border: 1px solid var(--g200); border-radius: 999px; background: #fff; color: var(--g700); font-weight: 600; cursor: pointer; transition: background-color .2s, border-color .2s, color .2s; -webkit-tap-highlight-color: transparent; }
-        .member-chip[aria-selected="true"] { border-color: var(--brand-600); background: var(--brand-600); color: #fff; }
+        .member-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-bottom: 16px; }   /* 5명씩 2줄 */
+        .member-chip { --c-bg: var(--g100); --c-fg: var(--g700); appearance: none; min-height: 48px; padding: 8px 2px; border: 2px solid transparent; border-radius: 12px; background: var(--c-bg); color: var(--c-fg); font-size: .9375rem; font-weight: 700; white-space: nowrap; cursor: pointer; transition: background-color .2s, border-color .2s, color .2s, box-shadow .2s; -webkit-tap-highlight-color: transparent; }
+        .member-chip[aria-selected="true"] { background: var(--c-fg); color: #fff; box-shadow: 0 6px 14px -6px var(--c-fg); }
         .member-chip:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; }
         .member-panel { display: grid; justify-items: center; gap: 8px; padding: 28px 20px; border: 1px solid var(--g200); border-radius: var(--radius); background: var(--g50); text-align: center; }
-        .member-avatar { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--brand-100); color: var(--brand-700); font-size: 1.5rem; font-weight: 700; }
+        .member-avatar { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--c-bg, var(--brand-100)); color: var(--c-fg, var(--brand-700)); font-size: 1.5rem; font-weight: 700; }
         .member-panel h3 { font-size: 1.125rem; font-weight: 700; color: var(--g800); }
         .member-panel p { color: var(--g600); }
         .member-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 6px; padding: 10px 18px; border-radius: 10px; background: var(--g900); color: #fff; font-weight: 600; text-decoration: none; }
@@ -583,7 +583,7 @@
             .choice:hover { background: var(--brand-50); }
             .btn-primary:hover:not(:disabled) { background: var(--brand-700); transform: translateY(-2px); box-shadow: 0 14px 24px -8px rgba(37, 99, 235, .6); }
             .btn-dark:hover { background: var(--g800); }
-            .member-chip:hover:not([aria-selected="true"]) { border-color: var(--brand-500); color: var(--brand-600); }
+            .member-chip:hover:not([aria-selected="true"]) { border-color: var(--c-fg); }
             .member-link:hover { background: var(--g800); }
         }
 
@@ -1052,17 +1052,31 @@
             { name: '최경희', notion: '' },
             { name: '정영옥', notion: '' },
         ];
+        // 회원별 파스텔 색 (배경 / 글자). 회원이 늘면 처음 색부터 다시 씁니다.
+        const MEMBER_COLORS = [
+            ['#ffe4e6', '#be123c'], // 장미
+            ['#ffedd5', '#c2410c'], // 주황
+            ['#fef3c7', '#b45309'], // 호박
+            ['#ecfccb', '#4d7c0f'], // 연두
+            ['#d1fae5', '#047857'], // 초록
+            ['#cffafe', '#0e7490'], // 청록
+            ['#dbeafe', '#1d4ed8'], // 파랑
+            ['#e0e7ff', '#4338ca'], // 남색
+            ['#ede9fe', '#6d28d9'], // 보라
+            ['#fae8ff', '#a21caf'], // 자주
+        ];
+        const colorVars = i => { const [bg, fg] = MEMBER_COLORS[i % MEMBER_COLORS.length]; return `--c-bg:${bg};--c-fg:${fg}`; };
         const memberTabs = document.getElementById('memberTabs');
         const memberPanel = document.getElementById('memberPanel');
         memberTabs.innerHTML = MEMBERS.map((m, i) =>
-            `<button type="button" class="member-chip" role="tab" aria-selected="false" aria-controls="memberPanel" data-i="${i}">${esc(m.name)}</button>`).join('');
+            `<button type="button" class="member-chip" role="tab" aria-selected="false" aria-controls="memberPanel" data-i="${i}" style="${colorVars(i)}">${esc(m.name)}</button>`).join('');
 
         function showMember(i) {
             const m = MEMBERS[i];
             memberTabs.querySelectorAll('.member-chip').forEach((b, j) => b.setAttribute('aria-selected', String(j === i)));
             const linked = /^https:\/\/([\w-]+\.)*notion\.(so|site)\//.test(m.notion || '');
             memberPanel.innerHTML = `
-                <div class="member-avatar" aria-hidden="true">${esc(m.name.slice(0, 1))}</div>
+                <div class="member-avatar" aria-hidden="true" style="${colorVars(i)}">${esc(m.name.slice(0, 1))}</div>
                 <h3>${esc(m.name)}님의 콘텐츠</h3>
                 ${linked
                     ? `<p>${esc(m.name)}님이 만든 콘텐츠를 노션 페이지에서 볼 수 있습니다.</p>
